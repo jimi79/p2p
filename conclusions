@@ -1,0 +1,6 @@
+u have to set a min and max limit for hosts count, otherwise new hosts won't be able to connect.
+
+a.bad_guys_ratio=0.01 # 1% of bad guys screw the network
+-> makes sense : if an info can't be verified, then the first one to send it is right
+
+

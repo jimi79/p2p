@@ -180,5 +180,10 @@ def experiment():
 	a.disconnect_randoms(300)
 	print("stabilizing")
 	a.check_till_stable() 
-	a.pass_info(random.randrange(0,100)) 
+	print("passing info 1")
+	a.pass_info(1)
+	print("passing info 2")
+	a.pass_info(2)
+	print("passing info 1")
+	a.pass_info(1)
 	return a
