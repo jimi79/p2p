@@ -2,6 +2,7 @@
 
 
 import random
+from collections import Counter
 
 verbose=False
 min_hosts=10
@@ -30,10 +31,11 @@ class Peer:
 		self.host.ip=self.__get_ip()
 		self.info=None
 		self.peers=peers # pointer to the list of other peers
+		self.bad=False
 
 	def add_peer(self, idx):
 		if self.idx!=idx and not(idx in self.connected):
-			if len(self.connected) < max_hosts:
+			if len(self.connected) < max_hosts and (len(self.peers[idx].connected) < max_hosts):
 				self.connected.append(idx)
 				self.peers[idx].connected.append(self.idx)
 				return True
@@ -73,27 +75,29 @@ class Peer:
 	def init_info(self, info):
 		self.info=info
 
-	def pass_info(self, peers):
+	def get_info(self):
 		# that host will ask all the other the value
-		if self.info != None:
-			for i in self.connected:
-				if peers[i].info != self.info:
-					peers[i].info = self.info	
+#TODO write an object with time, so it picks the most recent value
+		l=[]
+		for i in self.connected:
+			if self.peers[i].info != None:
+				l.append(self.peers[i].info)
+		return l
+
+	def choose_info(self): #choose an info amongst all its peer to get the most common 
+		if not self.bad:
+			c=Counter(self.get_info())
+			if len(c)>0:
+				self.info=c.most_common()[0][0] 
+		else:
+			self.info=0-random.randrange(0,100) # < 0 so i can spot it
+
+
 
 class Peers(): 
 	def __init__(self): 
 		self.peers = []
-		self.add_randoms(10000)
-		self.check_till_stable()
-		#self.disconnect_randoms(30)
-		#self.check_till_stable()
-
-	def add_three(self):
-		for i in range(0,3): 
-			p=Peer(i, self.peers)
-			self.peers.append(p)
-			for j in range(0,i):
-				self.connect(i, j) 
+		self.bad_guys_ratio=0
 
 	def add_random(self): # add a host and connect to a random one
 		idx=len(self.peers)
@@ -104,7 +108,13 @@ class Peers():
 				if p.add_peer(random.choice(self.peers).idx):
 					break
 
+		if random.random()<self.bad_guys_ratio:
+			p.bad=True
+
 		return p
+
+	def count_bad_guys(self):
+		return len([k for k in self.peers if k.bad==True])
 
 	def add_randoms(self, count):
 		for i in range(0, count):
@@ -130,7 +140,7 @@ class Peers():
 		a=0
 		while a!=self.avg_connected_size():
 			a=self.avg_connected_size()
-			print("avg size = %d" % a)
+			print("avg size = %0.5f" % a)
 			self.check_connections()
 
 	def calcuation(self):
@@ -153,11 +163,22 @@ class Peers():
 			oldp=p
 			c=c+1 # to limit the number of loops
 			for i in self.peers:
-				i.pass_info(self.peers)
+				i.choose_info()
 			p=self.check_info(info)
-			print("percentage is %0.2f" % (p*100))
+			print("percentage is %0.5f" % (p*100))
 
-def try_():
+def experiment():
+	print("initializing")
 	a=Peers()
-	a.pass_info(5)
+	print("setting percentage of bad guys")
+	a.bad_guys_ratio=0.01 # 1% of bad guys screw the network
+	print("adding randoms")
+	a.add_randoms(10000)
+	print("stabilizing")
+	a.check_till_stable()
+	print("removing randoms")
+	a.disconnect_randoms(300)
+	print("stabilizing")
+	a.check_till_stable() 
+	a.pass_info(random.randrange(0,100)) 
 	return a
