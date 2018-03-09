@@ -1,0 +1,56 @@
+
+each peer have a sort of time, but that can varies, so here, we'll 
+assign for each peer a 'delay', taht will be -1 for each loop
+and in that loop, we are like 'do_that_task'
+and once the task done, each host calculate an average of the result from each peer it's connected
+and each peer should have the same result, approx. well actually it has to.
+actually we calculate a random
+then we gather all randoms from other, and with our own we do an avg, and that is the result
+and then we repeat, till the random is table
+and that mean each of us should have a proper random number
+meaning that from here we can decide the next block to come
+list of proposed block should be stored
+and with that list we pick a random into one
+so :
+
+- procedure called tick that does whatever has to be done
+- each tick :
+ - host tries to mine a block
+ - if some host found a block, it adds to its chain
+ - each host asks the other (or the other tells ones) their blockchain status
+	- each host telling the other to which its connected makes more sense because it can react in real time to a chain update
+  - but also a host reconnecting to the network should be able to ask
+  - maybe a host should tell its blockchain if :
+   - it was updated
+   - it was asked
+ - if one host sees two diff blockchains (it asks for the last, and the one before, till it converges), it takes the longuest
+
+- then we'll add difficulties and everythg into a blockchain, that will be a type
+and a blockchaincompare to compare two blockchaine
+and we'll have everythg
+and we'll emulate cheaters who pretend to solve a block no pb
+
+
+-- but for now, i'll use my network to just do a calculation, and find out the result
+i'll emulate computers who are fasters than other with ticks
+and i'll get the result of everybody
+
+
+on se connecte à un seul host, mais on a une liste des autres si celui là tombe ?
+
+
+when we create a new host, it can connects to any host that doesn't overpass its connection limit
+there is a min connection that it will try to go over
+and a max connection
+
+so when new host, we give it a list of possible hosts, or maybe a beginning list, but based on what ?
+
+
+
+
+
+adding random host = 
+adding host, pick a random one that doesn't reach its max connection (random then loop)
+
+check : add hosts till min_host is reached. 
+adding host : try add host if other doesn't reach max_host
