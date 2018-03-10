@@ -236,7 +236,7 @@ def experiment():
 	print("setting percentage of bad guys")
 	a.bad_guys_ratio=0.01 # 1% of bad guys screw the network
 	print("adding randoms")
-	a.add_randoms(100)
+	a.add_randoms(10000)
 	print("stabilizing")
 	a.check_till_stable()
 	print("removing randoms")
@@ -244,6 +244,6 @@ def experiment():
 	print("stabilizing")
 	a.check_till_stable() 
 	print("living blockchain for 1000 turns, 1 block mined every 10/15 turnes")
-	a.random_mining(10, 15, 1000) # random mining without any chance of having multiple blockchains, one block is mining there and there. well i guess. actually it's not possible, there is only one book..... darn it
+	a.random_mining(1, 15, 10000) # random mining without any chance of having multiple blockchains, one block is mining there and there. well i guess. actually it's not possible, there is only one book..... darn it
 
 	return a 
