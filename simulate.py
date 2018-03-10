@@ -4,6 +4,20 @@
 import random
 from collections import Counter
 
+
+class Book:
+	def __init__(self):
+		self.lines=[c for c in [a.strip() for a in open('data.txt','r').readlines()] if c!='']
+		self.idx=0 # next line to read
+
+
+class Block:
+	def __init__(self):
+		self.data="" # blockchain should be the story of something readable
+#if bad guy, then the line will be something like '#' or some other datas that i can find
+		self.hashOk=True # by default, the hash is ok. will be wrong if guy is bad
+
+
 verbose=False
 min_hosts=10
 max_hosts=20
@@ -32,6 +46,7 @@ class Peer:
 		self.info=None
 		self.peers=peers # pointer to the list of other peers
 		self.bad=False
+		self.blockchain=[] # array of Block
 
 	def add_peer(self, idx):
 		if self.idx!=idx and not(idx in self.connected):
@@ -72,26 +87,8 @@ class Peer:
 	def check_calculation(self, value):
 		pass
 
-	def init_info(self, info):
-		self.info=info
-
-	def get_info(self):
-		# that host will ask all the other the value
-#TODO write an object with time, so it picks the most recent value
-		l=[]
-		for i in self.connected:
-			if self.peers[i].info != None:
-				l.append(self.peers[i].info)
-		return l
-
-	def choose_info(self): #choose an info amongst all its peer to get the most common 
-		if not self.bad:
-			c=Counter(self.get_info())
-			if len(c)>0:
-				self.info=c.most_common()[0][0] 
-		else:
-			self.info=0-random.randrange(0,100) # < 0 so i can spot it
-
+	def get_infos(self):
+		# we check amongst others their blockchain, based on lenght, to ask for missing blocks (i'll copy the items to add to my list, i guess it's a pointer copy here, so don't update block randomly)
 
 
 class Peers(): 
