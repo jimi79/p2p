@@ -4,21 +4,13 @@
 import random
 from collections import Counter
 
-
-class Book:
-	def __init__(self):
-		self.lines=[c for c in [a.strip() for a in open('data.txt','r').readlines()] if c!='']
-		self.idx=0 # next line to read
-
-
 class Block:
 	def __init__(self):
-		self.data="" # blockchain should be the story of something readable
-#if bad guy, then the line will be something like '#' or some other datas that i can find
-		self.hashOk=True # by default, the hash is ok. will be wrong if guy is bad
+		self.data=None # will be a value
+		self.owner=None
+		self.hash_ok=True # by default, the hash is ok. will be wrong if guy is bad
 
-
-verbose=False
+verbose=2 # 1: experiment, 2: Peers, 3: Peer
 min_hosts=10
 max_hosts=20
 
@@ -32,8 +24,7 @@ class Host:
 	def connect(self):
 		self.ping=True
 
-class Peer:
-	
+class Peer: 
 	def __get_ip(self):
 		#global cpt
 		return '%s:%s:%s:%s' % tuple([str(hex(random.randrange(0,65535)))[2:] for i in range(0,4)])
@@ -81,20 +72,58 @@ class Peer:
 		self.disconnect_from_offline()
 		self.connect_to_other_s_peers()
 
-	def init_calculation(self, value): 
-		self.tick=random.randrange(10,30)
+	def get_blockchain(self):
+		global verbose
+		bb=None # biggest blockchain found
+		max_len=-1
+		for i in self.connected:
+			ob=self.peers[i].blockchain
+			if len(ob) > len(self.blockchain):
+				if verbose>=3:
+					print("%d has a bigger blockchain, %d/%d" % (i, len(ob), len(self.blockchain)))
+				ok=True # other's blockchain is fine 
+				for j in ob[len(self.blockchain):]: # for each new block
+					if not j.hash_ok:
+						ok=False
+						break 
+				if verbose>=3:
+					if ok:
+						print("Other's blockchain is right")
+					else:
+						print("Other's blockchain is wrong")
+				if ok:
+					if len(ob)>max_len:
+						max_len=len(ob) 
+					bb=ob
 
-	def check_calculation(self, value):
-		pass
+		if bb != None:
+			if verbose>=3:
+				print("Synchronizing")
+			for j in bb[len(self.blockchain):]: # for each new block
+				self.blockchain.append(j) 
 
-	def get_infos(self):
-		# we check amongst others their blockchain, based on lenght, to ask for missing blocks (i'll copy the items to add to my list, i guess it's a pointer copy here, so don't update block randomly)
+	def mine_block(self, rg):
+# data = last data mined in the blockchain + random value from 0 to 'rg'
+		b=Block()
+		if self.blockchain==[]:
+			b.data=0 # good quest, who wins ? the oldest ? how to prove you're owning the oldest ?
+		else:
+			b.data=random.randrange(1, rg) 
+		b.has_ok=self.bad
+		b.owner=self.idx
+		self.blockchain.append(b)
 
+	def get_blockchain_data(self):
+		return ', '.join([("%d" % a.data) for a in self.blockchain])
+
+	def who_blockchain(self):
+		return ', '.join([("%d" % a.owner) for a in self.blockchain])
 
 class Peers(): 
 	def __init__(self): 
 		self.peers = []
 		self.bad_guys_ratio=0
+		self.books=[]
 
 	def add_random(self): # add a host and connect to a random one
 		idx=len(self.peers)
@@ -106,6 +135,7 @@ class Peers():
 					break
 
 		if random.random()<self.bad_guys_ratio:
+			print("%d is bad" % p.idx)
 			p.bad=True
 
 		return p
@@ -164,23 +194,56 @@ class Peers():
 			p=self.check_info(info)
 			print("percentage is %0.5f" % (p*100))
 
+	def random_peer_mine_block(self):
+		p=random.choice(self.peers)
+		p.mine_block(10)
+		return p
+
+	def check_blockchain(self):
+		for i in self.peers:
+			i.get_blockchain()
+
+	def get_avg_blockchain_length(self):
+		a=sum([len(a.blockchain) for a in self.peers])
+		b=len(self.peers)
+		return a/b
+
+	def check_blockchain_till_stable(self):
+		avg_len=-2
+		old_avg_len=-1
+		while avg_len != old_avg_len:
+			self.check_blockchain()
+			old_avg_len=avg_len
+			avg_len=self.get_avg_blockchain_length()
+		return avg_len
+
+	def random_mining(self, min_ticks, max_ticks, count_blocks):
+		ticks=0
+		for i in range(0, count_blocks):
+			if ticks<=0:
+				p=self.random_peer_mine_block()
+				if verbose>=2:
+					print("%d mined a block !" % p.idx) 
+				ticks=random.randrange(min_ticks, max_ticks)
+			ticks=ticks-1
+			self.check_blockchain()
+			print("avg length = %0.2f" % self.get_avg_blockchain_length() )
+
+
 def experiment():
-	print("initializing")
+	print("initializing peers")
 	a=Peers()
 	print("setting percentage of bad guys")
 	a.bad_guys_ratio=0.01 # 1% of bad guys screw the network
 	print("adding randoms")
-	a.add_randoms(10000)
+	a.add_randoms(100)
 	print("stabilizing")
 	a.check_till_stable()
 	print("removing randoms")
-	a.disconnect_randoms(300)
+	a.disconnect_randoms(int(len(a.peers)/10))
 	print("stabilizing")
 	a.check_till_stable() 
-	print("passing info 1")
-	a.pass_info(1)
-	print("passing info 2")
-	a.pass_info(2)
-	print("passing info 1")
-	a.pass_info(1)
-	return a
+	print("living blockchain for 1000 turns, 1 block mined every 10/15 turnes")
+	a.random_mining(10, 15, 1000) # random mining without any chance of having multiple blockchains, one block is mining there and there. well i guess. actually it's not possible, there is only one book..... darn it
+
+	return a 
