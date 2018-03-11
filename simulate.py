@@ -217,10 +217,12 @@ class Peers():
 			avg_len=self.get_avg_blockchain_length()
 		return avg_len
 
-	def random_mining(self, min_ticks, max_ticks, count_blocks):
+	def random_mining(self, min_ticks, max_ticks, count_blocks, joinpart):
 		ticks=0
 		for i in range(0, count_blocks):
 			if ticks<=0:
+				self.disconnect_randoms(joinpart)
+				self.connect_randoms(joinpart)
 				p=self.random_peer_mine_block()
 				if verbose>=2:
 					print("%d mined a block !" % p.idx) 
@@ -244,6 +246,6 @@ def experiment():
 	print("stabilizing")
 	a.check_till_stable() 
 	print("living blockchain for 1000 turns, 1 block mined every 10/15 turnes")
-	a.random_mining(1, 15, 10000) # random mining without any chance of having multiple blockchains, one block is mining there and there. well i guess. actually it's not possible, there is only one book..... darn it
+	a.random_mining(1, 15, 10000, 30) # random mining without any chance of having multiple blockchains, one block is mining there and there. well i guess. actually it's not possible, there is only one book..... darn it
 
 	return a 
