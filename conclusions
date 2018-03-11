@@ -3,4 +3,10 @@ u have to set a min and max limit for hosts count, otherwise new hosts won't be 
 a.bad_guys_ratio=0.01 # 1% of bad guys screw the network
 -> makes sense : if an info can't be verified, then the first one to send it is right
 
+if i'm like : my peers blockchain is bigger, i add new blocks to mine
+well i can't do that, because these blocks might be not accepted
+to work around that, i could just duplicate the whole blockchain, so the longest would win, but that would take ages
+so i need to maintain a list of unvalidated blocks, and take other's blockchain going n blocks back, in case they are diff
+i also shouldn't take a block that doesn't follow mine
+
 

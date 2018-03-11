@@ -9,8 +9,9 @@ class Block:
 		self.data=None # will be a value
 		self.owner=None
 		self.hash_ok=True # by default, the hash is ok. will be wrong if guy is bad
+		self.previous_block_data=None
 
-verbose=2 # 1: experiment, 2: Peers, 3: Peer
+verbose=3 # 1: experiment, 2: Peers, 3: Peer
 min_hosts=10
 max_hosts=20
 
@@ -79,25 +80,32 @@ class Peer:
 		for i in self.connected:
 			ob=self.peers[i].blockchain
 			if len(ob) > len(self.blockchain):
-				if verbose>=3:
+				if verbose>=5:
 					print("%d has a bigger blockchain, %d/%d" % (i, len(ob), len(self.blockchain)))
-				ok=True # other's blockchain is fine 
-				for j in ob[len(self.blockchain):]: # for each new block
-					if not j.hash_ok:
-						ok=False
-						break 
-				if verbose>=3:
-					if ok:
-						print("Other's blockchain is right")
-					else:
-						print("Other's blockchain is wrong")
+					print("Comparing datas with what i have, to see if it fits")
+
+				if len(self.blockchain)>0: # we got to trust it otherwise..
+					ok=ob[len(self.blockchain)].previous_block_data==self.blockchain[-1].data
+				else:
+					ok=True
+
 				if ok:
-					if len(ob)>max_len:
-						max_len=len(ob) 
-					bb=ob
+					for j in ob[len(self.blockchain):]: # for each new block
+						if not j.hash_ok:
+							ok=False
+							break 
+					if verbose>=5:
+						if ok:
+							print("Other's blockchain is right")
+						else:
+							print("Other's blockchain is wrong")
+					if ok:
+						if len(ob)>max_len:
+							max_len=len(ob) 
+						bb=ob
 
 		if bb != None:
-			if verbose>=3:
+			if verbose>=5:
 				print("Synchronizing")
 			for j in bb[len(self.blockchain):]: # for each new block
 				self.blockchain.append(j) 
@@ -109,6 +117,7 @@ class Peer:
 			b.data=0 # good quest, who wins ? the oldest ? how to prove you're owning the oldest ?
 		else:
 			b.data=random.randrange(1, rg) 
+			b.previous_block_data=self.blockchain[-1].data
 		b.has_ok=self.bad
 		b.owner=self.idx
 		self.blockchain.append(b)
@@ -116,8 +125,11 @@ class Peer:
 	def get_blockchain_data(self):
 		return ', '.join([("%d" % a.data) for a in self.blockchain])
 
-	def who_blockchain(self):
+	def get_blockchain_owner(self):
 		return ', '.join([("%d" % a.owner) for a in self.blockchain])
+
+	def get_sum(self):
+		return sum([a.data for a in self.blockchain])
 
 class Peers(): 
 	def __init__(self): 
@@ -217,11 +229,12 @@ class Peers():
 			avg_len=self.get_avg_blockchain_length()
 		return avg_len
 
-	def random_mining(self, min_ticks, max_ticks, count_blocks):
+	def random_mining(self, count_block_mined_simulatenously, min_ticks, max_ticks, count_blocks):
 		ticks=0
 		for i in range(0, count_blocks):
 			if ticks<=0:
-				p=self.random_peer_mine_block()
+				for j in range(0, count_block_mined_simulatenously):
+					p=self.random_peer_mine_block()
 				if verbose>=2:
 					print("%d mined a block !" % p.idx) 
 				ticks=random.randrange(min_ticks, max_ticks)
@@ -230,13 +243,14 @@ class Peers():
 			print("avg length = %0.2f" % self.get_avg_blockchain_length() )
 
 
+
 def experiment():
 	print("initializing peers")
 	a=Peers()
 	print("setting percentage of bad guys")
 	a.bad_guys_ratio=0.01 # 1% of bad guys screw the network
 	print("adding randoms")
-	a.add_randoms(10000)
+	a.add_randoms(1000)
 	print("stabilizing")
 	a.check_till_stable()
 	print("removing randoms")
@@ -244,6 +258,6 @@ def experiment():
 	print("stabilizing")
 	a.check_till_stable() 
 	print("living blockchain for 1000 turns, 1 block mined every 10/15 turnes")
-	a.random_mining(1, 15, 10000) # random mining without any chance of having multiple blockchains, one block is mining there and there. well i guess. actually it's not possible, there is only one book..... darn it
+	a.random_mining(1, 3, 10, 100) # random mining without any chance of having multiple blockchains, one block is mining there and there. well i guess. actually it's not possible, there is only one book..... darn it
 
 	return a 
