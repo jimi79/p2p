@@ -80,34 +80,36 @@ class Peer:
 		for i in self.connected:
 			ob=self.peers[i].blockchain
 			if len(ob) > len(self.blockchain):
+				ok=True
+				for j in ob[len(self.blockchain):]: # for each new block
+					if not j.hash_ok:
+						ok=False
+						break 
 				if verbose>=5:
-					print("%d has a bigger blockchain, %d/%d" % (i, len(ob), len(self.blockchain)))
-					print("Comparing datas with what i have, to see if it fits")
-
-				if len(self.blockchain)>0: # we got to trust it otherwise..
-					ok=ob[len(self.blockchain)].previous_block_data==self.blockchain[-1].data
-				else:
-					ok=True
-
-				if ok:
-					for j in ob[len(self.blockchain):]: # for each new block
-						if not j.hash_ok:
-							ok=False
-							break 
-					if verbose>=5:
-						if ok:
-							print("Other's blockchain is right")
-						else:
-							print("Other's blockchain is wrong")
 					if ok:
-						if len(ob)>max_len:
-							max_len=len(ob) 
-						bb=ob
+						print("Other's blockchain is right")
+					else:
+						print("Other's blockchain is wrong")
+				if ok:
+					if len(ob)>max_len:
+						max_len=len(ob) 
+					bb=ob
 
 		if bb != None:
 			if verbose>=5:
 				print("Synchronizing")
-			for j in bb[len(self.blockchain):]: # for each new block
+
+			# we check from my item going back in time where we do match
+			i=len(self.blockchain)-1
+			diff=True
+			while (i > 0) and diff:
+				diff=self.blockchain[i].data==bb[i].data # of course i should compare some checksum here 
+				if diff:
+					i=i-1
+
+			self.blockchain=self.blockchain[0:i]
+
+			for j in bb[i:]: # for each new block
 				self.blockchain.append(j) 
 
 	def mine_block(self, rg):
@@ -236,7 +238,7 @@ class Peers():
 				for j in range(0, count_block_mined_simulatenously):
 					p=self.random_peer_mine_block()
 				if verbose>=2:
-					print("%d mined a block !" % p.idx) 
+					print("%d mined" % p.idx) 
 				ticks=random.randrange(min_ticks, max_ticks)
 			ticks=ticks-1
 			self.check_blockchain()
@@ -250,7 +252,7 @@ def experiment():
 	print("setting percentage of bad guys")
 	a.bad_guys_ratio=0.01 # 1% of bad guys screw the network
 	print("adding randoms")
-	a.add_randoms(1000)
+	a.add_randoms(10000)
 	print("stabilizing")
 	a.check_till_stable()
 	print("removing randoms")
@@ -258,6 +260,7 @@ def experiment():
 	print("stabilizing")
 	a.check_till_stable() 
 	print("living blockchain for 1000 turns, 1 block mined every 10/15 turnes")
-	a.random_mining(1, 3, 10, 100) # random mining without any chance of having multiple blockchains, one block is mining there and there. well i guess. actually it's not possible, there is only one book..... darn it
+	a.random_mining(5, 1, 5, 1000) # PoW
+	# need to code PoS, so each node knows which node will be picked up... that's another story clearly
 
 	return a 
