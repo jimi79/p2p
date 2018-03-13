@@ -9,8 +9,9 @@ class Block:
 		self.data=None # will be a value
 		self.owner=None
 		self.hash_ok=True # by default, the hash is ok. will be wrong if guy is bad
+		self.previous_block_data=None
 
-verbose=2 # 1: experiment, 2: Peers, 3: Peer
+verbose=3 # 1: experiment, 2: Peers, 3: Peer
 min_hosts=10
 max_hosts=20
 
@@ -79,14 +80,12 @@ class Peer:
 		for i in self.connected:
 			ob=self.peers[i].blockchain
 			if len(ob) > len(self.blockchain):
-				if verbose>=3:
-					print("%d has a bigger blockchain, %d/%d" % (i, len(ob), len(self.blockchain)))
-				ok=True # other's blockchain is fine 
+				ok=True
 				for j in ob[len(self.blockchain):]: # for each new block
 					if not j.hash_ok:
 						ok=False
 						break 
-				if verbose>=3:
+				if verbose>=5:
 					if ok:
 						print("Other's blockchain is right")
 					else:
@@ -97,9 +96,20 @@ class Peer:
 					bb=ob
 
 		if bb != None:
-			if verbose>=3:
+			if verbose>=5:
 				print("Synchronizing")
-			for j in bb[len(self.blockchain):]: # for each new block
+
+			# we check from my item going back in time where we do match
+			i=len(self.blockchain)-1
+			diff=True
+			while (i > 0) and diff:
+				diff=self.blockchain[i].data==bb[i].data # of course i should compare some checksum here 
+				if diff:
+					i=i-1
+
+			self.blockchain=self.blockchain[0:i]
+
+			for j in bb[i:]: # for each new block
 				self.blockchain.append(j) 
 
 	def mine_block(self, rg):
@@ -109,6 +119,7 @@ class Peer:
 			b.data=0 # good quest, who wins ? the oldest ? how to prove you're owning the oldest ?
 		else:
 			b.data=random.randrange(1, rg) 
+			b.previous_block_data=self.blockchain[-1].data
 		b.has_ok=self.bad
 		b.owner=self.idx
 		self.blockchain.append(b)
@@ -116,8 +127,11 @@ class Peer:
 	def get_blockchain_data(self):
 		return ', '.join([("%d" % a.data) for a in self.blockchain])
 
-	def who_blockchain(self):
+	def get_blockchain_owner(self):
 		return ', '.join([("%d" % a.owner) for a in self.blockchain])
+
+	def get_sum(self):
+		return sum([a.data for a in self.blockchain])
 
 class Peers(): 
 	def __init__(self): 
@@ -147,12 +161,12 @@ class Peers():
 		for i in range(0, count):
 			self.add_random()
 
-	def disconnect_random(self):
-		random.choice(self.peers).host.ping=False
+	def connect_random(self, val):
+		random.choice(self.peers).host.ping=val
 
-	def disconnect_randoms(self, count):
+	def connect_randoms(self, count, val):
 		for i in range(0, count):
-			self.disconnect_random()
+			self.connect_random(val)
 		
 	def check_connections(self):
 		for p in self.peers:
@@ -221,15 +235,16 @@ class Peers():
 		ticks=0
 		for i in range(0, count_blocks):
 			if ticks<=0:
-				self.disconnect_randoms(joinpart)
-				self.connect_randoms(joinpart)
+				self.connect_randoms(joinpart, False)
+				self.connect_randoms(joinpart, True)
 				p=self.random_peer_mine_block()
 				if verbose>=2:
-					print("%d mined a block !" % p.idx) 
+					print("%d mined" % p.idx) 
 				ticks=random.randrange(min_ticks, max_ticks)
 			ticks=ticks-1
 			self.check_blockchain()
 			print("avg length = %0.2f" % self.get_avg_blockchain_length() )
+
 
 
 def experiment():
@@ -238,14 +253,11 @@ def experiment():
 	print("setting percentage of bad guys")
 	a.bad_guys_ratio=0.01 # 1% of bad guys screw the network
 	print("adding randoms")
-	a.add_randoms(10000)
+	a.add_randoms(1000)
 	print("stabilizing")
 	a.check_till_stable()
-	print("removing randoms")
-	a.disconnect_randoms(int(len(a.peers)/10))
-	print("stabilizing")
-	a.check_till_stable() 
 	print("living blockchain for 1000 turns, 1 block mined every 10/15 turnes")
-	a.random_mining(1, 15, 10000, 30) # random mining without any chance of having multiple blockchains, one block is mining there and there. well i guess. actually it's not possible, there is only one book..... darn it
+	a.random_mining(1, 5, 1000, 30) # PoW
+	# need to code PoS, so each node knows which node will be picked up... that's another story clearly
 
 	return a 

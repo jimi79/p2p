@@ -1,4 +1,4 @@
-# nosmartindent
+# vim: syntax=none nosmartindent:
 
 each peer have a sort of time, but that can varies, so here, we'll 
 assign for each peer a 'delay', taht will be -1 for each loop
@@ -88,3 +88,8 @@ for each block, i check if it's ok
 if all blocks are ok, then i add the blocks to myself
 
 
+
+what method to use to properly sync blockchain ?
+well, first let's try refusing other's blocks if they can't find on my chain
+
+and with that, i should have nodes who can't sync anymore

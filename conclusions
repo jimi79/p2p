@@ -3,4 +3,13 @@ u have to set a min and max limit for hosts count, otherwise new hosts won't be 
 a.bad_guys_ratio=0.01 # 1% of bad guys screw the network
 -> makes sense : if an info can't be verified, then the first one to send it is right
 
+if i'm like : my peers blockchain is bigger, i add new blocks to mine
+well i can't do that, because these blocks might be not accepted
+to work around that, i could just duplicate the whole blockchain, so the longest would win, but that would take ages
+so i need to maintain a list of unvalidated blocks, and take other's blockchain going n blocks back, in case they are diff
+i also shouldn't take a block that doesn't follow mine
 
+if it's too easy to mine a block, u end up with lots of different blockchains, all having the same length, because that's on what i base the comparaison (the longuest is the right one)
+that's why we have PoW : so that one can't mine like tons of block and be the longest
+
+with more complicated calculations (in my code : less mined block per tick), it works
